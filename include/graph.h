@@ -416,6 +416,7 @@ private:
 };
 
 /************* helper ************/
+#if MINI_GRAPH_LOG_WITH_FILE
 #define graph_log_debug(fmt...) \
     Graph::__log__(GraphLogLevel::DEBUG, __FILE__, __func__, __LINE__, fmt)
 #define graph_log_info(fmt...) \
@@ -424,6 +425,16 @@ private:
     Graph::__log__(GraphLogLevel::WARN, __FILE__, __func__, __LINE__, fmt)
 #define graph_log_error(fmt...) \
     Graph::__log__(GraphLogLevel::ERROR, __FILE__, __func__, __LINE__, fmt)
+#else
+#define graph_log_debug(fmt...) \
+    Graph::__log__(GraphLogLevel::DEBUG, "", __func__, __LINE__, fmt)
+#define graph_log_info(fmt...) \
+    Graph::__log__(GraphLogLevel::INFO, "", __func__, __LINE__, fmt)
+#define graph_log_warn(fmt...) \
+    Graph::__log__(GraphLogLevel::WARN, "", __func__, __LINE__, fmt)
+#define graph_log_error(fmt...) \
+    Graph::__log__(GraphLogLevel::ERROR, "", __func__, __LINE__, fmt)
+#endif
 
 #define graph_likely(v)   __builtin_expect(static_cast<bool>(v), 1)
 #define graph_unlikely(v) __builtin_expect(static_cast<bool>(v), 0)

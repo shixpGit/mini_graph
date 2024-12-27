@@ -20,13 +20,11 @@ elseif(OHOS)
   target_link_libraries(mini_graph PUBLIC hilog_ndk.z)
 endif()
 
-set(GOOGLETEST_VERSION 1.15.2)
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/googletest/googletest)
-#enable_testing()
-add_subdirectory(test)
-
-# copy compile_commands.json to project root
-add_custom_target(copy_compile_commands ALL
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json ${PROJECT_SOURCE_DIR}
-	DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
-)
+if (TARGET gtest)
+  message(STATUS "gtest is already defined")
+else()
+  set(GOOGLETEST_VERSION 1.15.2)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/googletest/googletest)
+  #enable_testing()
+  add_subdirectory(test)
+endif()

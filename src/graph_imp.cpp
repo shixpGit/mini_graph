@@ -916,7 +916,20 @@ void default_log_handler(
 #endif
 }
 
-GraphLogHandler g_log_handler = default_log_handler;
+GraphLogHandler g_log_handler = nullptr;
+class InitDefaultLogHandler {
+public:
+    //! why needed this: c++ do not enuser the order of static variable init
+    InitDefaultLogHandler() {
+        if (g_log_handler) {
+            printf("Use user defined log handler\n");
+        } else {
+            printf("Use default log handler\n");
+            g_log_handler = default_log_handler;
+        }
+    }
+};
+InitDefaultLogHandler g_init_default_log_handler;
 }  // anonymous namespace
 
 void Graph::__assert_fail__(
