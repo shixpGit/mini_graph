@@ -5,6 +5,7 @@
 #include <fstream>
 #include <mutex>
 #include <queue>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -28,13 +29,13 @@ using namespace mini_graph;
 
 double Gtimer::get_secs() const {
     auto now = std::chrono::high_resolution_clock::now();
-    return ::std::chrono::duration_cast<::std::chrono::nanoseconds>(now - m_start)
+    return std::chrono::duration_cast<::std::chrono::nanoseconds>(now - m_start)
                    .count() *
            1e-9;
 }
 double Gtimer::get_msecs() const {
     auto now = std::chrono::high_resolution_clock::now();
-    return ::std::chrono::duration_cast<::std::chrono::nanoseconds>(now - m_start)
+    return std::chrono::duration_cast<::std::chrono::nanoseconds>(now - m_start)
                    .count() *
            1e-6;
 }
@@ -813,7 +814,7 @@ std::string __ssprintf__(const char* fmt, ...) {
 auto config_dlf_log_level() -> std::pair<bool, GraphLogLevel> {
     bool is_use_env = false;
     auto dlf_level = GraphLogLevel::INFO;
-    if (auto* env = ::std::getenv("MINI_GRAPH_OVERRIDE_LOG_LEVEL")) {
+    if (auto* env = std::getenv("MINI_GRAPH_OVERRIDE_LOG_LEVEL")) {
         dlf_level = static_cast<GraphLogLevel>(::std::stoi(env));
         is_use_env = true;
     }

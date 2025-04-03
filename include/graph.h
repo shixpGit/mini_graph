@@ -1,3 +1,4 @@
+#include <chrono>
 #include <climits>
 #include <cstdarg>
 #include <functional>
@@ -447,9 +448,9 @@ private:
         }                                                                           \
     } while (0)
 
-#define graph_trap() __buitin_trap()
+#define graph_trap() __builtin_trap()
 
-#ifdef __EXCEPTIONS
+#if defined(__EXCEPTIONS) || defined(_WIN32)
 #define graph_throw(msg)  \
     graph_log_error(msg); \
     throw std::runtime_error(msg);
