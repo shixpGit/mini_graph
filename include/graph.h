@@ -417,7 +417,7 @@ private:
 };
 
 /************* helper ************/
-#if MINI_GRAPH_LOG_WITH_FILE
+#ifdef MINI_GRAPH_LOG_WITH_FILE
 #define graph_log_debug(fmt...) \
     Graph::__log__(GraphLogLevel::DEBUG, __FILE__, __func__, __LINE__, fmt)
 #define graph_log_info(fmt...) \
