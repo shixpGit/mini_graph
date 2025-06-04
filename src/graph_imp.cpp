@@ -296,7 +296,7 @@ std::string Graph::run_line(Node* node, size_t zoom_to) const {
     duration = duration * zoom_to / m_timer.get_msecs();
     bool have_r = false;
     int w_pos = -1;
-    for (int i = 0; i < zoom_to; i++) {
+    for (size_t i = 0; i < zoom_to; i++) {
         if (i >= start_time && i < start_time + duration) {
             time_pos += "R";
             have_r = true;

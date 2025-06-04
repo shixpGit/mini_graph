@@ -16,7 +16,6 @@ typedef void (*GraphLogHandler)(
         GraphLogLevel level, const char* file, const char* func, int line,
         const char* fmt, va_list ap);
 
-namespace {
 class Node {
 public:
     /*
@@ -179,8 +178,6 @@ public:
     double get_secs_reset();
     double get_msecs_reset();
 };
-
-}  // namespace
 
 class Graph {
 public:
