@@ -974,7 +974,7 @@ TEST(Graph, name_and_dot) {
             0xF, -19);
 
     g.add_task(
-            "D", []() {}, 0x1);
+        "D", []() {}, 0x1);
 
     g.add_task("E", []() {});
 
@@ -1016,7 +1016,104 @@ TEST(Graph, name_and_dot) {
     ASSERT_TRUE(g2.dump_dot("test_graph2e.dot"));
 }
 
+TEST(Graph, test_simple_graph_with_terminate) {
+    Graph g2(4, "simple_graph");
+    auto execute_graph2 = [&]() {
+        ASSERT_EQ(g2.name(), "test_graph");
+
+        g2.add_task(
+                "A",
+                []() { std::this_thread::sleep_for(std::chrono::milliseconds(100)); },
+                0xFF, 19);
+
+        g2.add_task(
+                "B",
+                []() { std::this_thread::sleep_for(std::chrono::milliseconds(100)); },
+                0, 20);
+
+        g2.add_task(
+                "C",
+                []() { std::this_thread::sleep_for(std::chrono::milliseconds(100)); },
+                0xF, -19);
+
+        g2.dependency("A", "B");
+        g2.dependency("B", "C");
+
+        ASSERT_FALSE(g2.dump_dot(""));
+        std::string file_name = g2.name() + ".dot";
+        g2.freezed();
+        g2.execute();
+        ASSERT_TRUE(g2.dump_dot(file_name));
+    };
+
+    std::thread graph_thread(execute_graph2);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    g2.terminate();
+    graph_thread.join();
+}
+
+TEST(Graph, test_complicated_graph_with_terminate) {
+    Graph g(4, "complicated_graph");
+    auto execute_graph = [&]() {
+        ASSERT_EQ(g.name(), "complicated_graph");
+
+        g.add_task(
+                "A",
+                []() { std::this_thread::sleep_for(std::chrono::milliseconds(200)); },
+                0xFF, 19);
+
+        g.add_task(
+                "B",
+                []() { std::this_thread::sleep_for(std::chrono::milliseconds(3)); }, 0,
+                20);
+
+        g.add_task(
+                "C",
+                []() { std::this_thread::sleep_for(std::chrono::milliseconds(10)); },
+                0xF, -19);
+
+        g.add_task("D", []() {}, 0x1);
+
+        g.add_task("E", []() {});
+
+        g.add_task("F", []() {});
+
+        g.add_task("G", []() {});
+
+        g.add_task("H", []() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        });
+
+        g.add_task("I", []() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        });
+
+        g.add_task("J", []() {});
+
+        g.dependency("A", "B");
+        g.dependency("B", {"C", "E"});
+        g.virtual_dependency("C", "D");
+        g.dependency("D", {"E", "F"});
+        g.dependency("E", {"F", "G"});
+        g.virtual_dependency("F", {"H", "I"});
+        g.dependency("G", "J");
+
+        g.freezed();
+        std::string file_name = g.name() + ".dot";
+        g.execute();
+        ASSERT_TRUE(g.dump_dot(file_name));
+    };
+
+    std::thread graph_thread(execute_graph);
+    auto tt = 4 + rand() % 40;
+    std::cout<<"tt: "<<tt<<std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(tt));
+    g.terminate();
+    graph_thread.join();
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
+    ::testing::GTEST_FLAG(filter) = "Graph.test_complicated_graph_with_terminate";
     return RUN_ALL_TESTS();
 }

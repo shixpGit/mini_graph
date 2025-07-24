@@ -286,6 +286,12 @@ public:
      */
     const std::string& name() const { return m_name; }
 
+    /*
+     * terminate the gpraph execution
+     */
+    void terminate();
+
+
     ~Graph() {
         for (auto& pair : m_nodes) {
             delete pair.second;
@@ -411,6 +417,11 @@ private:
 
     /* graph execute cost time */
     double m_cost_time = 0.0;
+
+    /*
+     * flag of graph is terminated
+     */
+    std::atomic<bool> m_terminate{false};
 };
 
 /************* helper ************/

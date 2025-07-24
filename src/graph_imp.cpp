@@ -383,7 +383,8 @@ bool Graph::dump_dot(const std::string& path) {
     if (ofs.is_open()) {
         //! get long_path info
         std::vector<Node*> lpath;
-        if (m_executed_node_count == m_nodes.size()) {
+        if (m_executed_node_count == m_nodes.size() ||
+            m_terminate.load(std::memory_order_seq_cst)) {
             lpath = longest_path();
         }
 
@@ -456,7 +457,8 @@ bool Graph::dump_dot(const std::string& path) {
                         << run_line(pair.second, 50) << " : " << pair.second->id();
                 }
             }
-            if (m_executed_node_count == m_nodes.size()) {
+            if (m_executed_node_count == m_nodes.size() ||
+                m_terminate.load(std::memory_order_seq_cst)) {
                 //! write graph cost time
                 ofs << "\n\nTotal cost time: " << m_cost_time << "ms";
             }
@@ -506,6 +508,11 @@ void Graph::inplace_worker(bool is_inplace) {
                 "even use pre task config");
     }
     m_is_inplace_worker = is_inplace;
+}
+
+void Graph::terminate() {
+    graph_log_info("Graph execution is being terminated.");
+    m_terminate.store(true, std::memory_order_seq_cst);
 }
 
 double Graph::execute() {
@@ -581,6 +588,14 @@ double Graph::execute() {
                     graph_log_info(
                             "Executed %s (%zu/%zu)", node->id().c_str(),
                             m_executed_node_count, m_nodes.size());
+                    if (m_terminate.load(std::memory_order_seq_cst)) {
+                        std::unique_lock<std::mutex> _(mtx);
+                        m_executed_node_count = m_nodes.size();
+                        finished.store(true, std::memory_order_seq_cst);
+                        graph_log_info("terminate is set, notify all threads to exit");
+                        cv.notify_all();
+                        return;
+                    }
                     if (m_executed_node_count == m_nodes.size()) {
                         std::unique_lock<std::mutex> _(mtx);
                         finished.store(true, std::memory_order_seq_cst);
@@ -724,7 +739,8 @@ void Graph::verify() {
     graph_log_info(
             "Execution status: %zu/%zu nodes executed", m_executed_node_count,
             m_nodes.size());
-    if (m_executed_node_count == m_nodes.size()) {
+    if (m_executed_node_count == m_nodes.size() ||
+        m_terminate.load(std::memory_order_seq_cst)) {
         graph_log_info("Execution completed successfully");
     } else {
         graph_log_error("some nodes are not executed, details:");
