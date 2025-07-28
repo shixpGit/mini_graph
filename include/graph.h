@@ -63,7 +63,7 @@ public:
      */
     bool is_executed() const { return m_status == Status::FINISHED; }
 
-    enum class Status { WAITING, RUNNING, FINISHED };
+    enum class Status { WAITING, RUNNING, TERMINATED, FINISHED };
     /*
      * set status
      * @param s: status
@@ -78,6 +78,8 @@ public:
                 return "RUNNING";
             case Status::FINISHED:
                 return "FINISHED";
+            case Status::TERMINATED:
+                return "TERMINATED";
             default:
                 __builtin_trap();
                 return "UNKNOWN";
@@ -287,7 +289,7 @@ public:
     const std::string& name() const { return m_name; }
 
     /*
-     * terminate the gpraph execution
+     * terminate the graph execution
      */
     void terminate();
 

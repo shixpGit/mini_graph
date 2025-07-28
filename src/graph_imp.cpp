@@ -284,7 +284,8 @@ void Graph::freezed() {
 
 std::string Graph::run_line(Node* node, size_t zoom_to) const {
     graph_assert(
-            node->status() == Node::Status::FINISHED,
+            node->status() == Node::Status::FINISHED ||
+            node->status() == Node::Status::TERMINATED,
             "code issue happened!!, Node: %s is not finished!", node->id().c_str());
     graph_assert(zoom_to > 10, "zoom_to should be greater than 10");
 
@@ -318,7 +319,7 @@ std::string Graph::run_line(Node* node, size_t zoom_to) const {
 
 std::vector<Node*> Graph::longest_path() {
     graph_assert(m_is_freezed, "Graph is not freezed! please call freezed() first!");
-    graph_assert(m_executed_node_count == m_nodes.size(), "Graph is not executed!");
+    graph_assert(m_executed_node_count == m_nodes.size() || m_terminate.load(std::memory_order_seq_cst), "Graph is not executed!");
 
     std::vector<Node*> path;
     std::vector<Node*> longest_path;
@@ -511,7 +512,7 @@ void Graph::inplace_worker(bool is_inplace) {
 }
 
 void Graph::terminate() {
-    graph_log_info("Graph execution is being terminated.");
+    graph_log_warn("Graph execution is being terminated.");
     m_terminate.store(true, std::memory_order_seq_cst);
 }
 
@@ -590,9 +591,19 @@ double Graph::execute() {
                             m_executed_node_count, m_nodes.size());
                     if (m_terminate.load(std::memory_order_seq_cst)) {
                         std::unique_lock<std::mutex> _(mtx);
-                        m_executed_node_count = m_nodes.size();
                         finished.store(true, std::memory_order_seq_cst);
                         graph_log_info("terminate is set, notify all threads to exit");
+                        // status -> terminated
+                        for (const auto& pair : m_nodes) {
+                            Node* node = pair.second;
+                            if (node->status() != Node::Status::FINISHED) {
+                                graph_log_info(
+                                        "Node %s is not executed, set status to "
+                                        "TERMINATED",
+                                        node->id().c_str());
+                                node->status(Node::Status::TERMINATED);
+                            }
+                        }
                         cv.notify_all();
                         return;
                     }
@@ -739,9 +750,10 @@ void Graph::verify() {
     graph_log_info(
             "Execution status: %zu/%zu nodes executed", m_executed_node_count,
             m_nodes.size());
-    if (m_executed_node_count == m_nodes.size() ||
-        m_terminate.load(std::memory_order_seq_cst)) {
+    if (m_executed_node_count == m_nodes.size()){
         graph_log_info("Execution completed successfully");
+    } else if(m_terminate.load(std::memory_order_seq_cst)){
+        graph_log_warn("Execution have been terminated");
     } else {
         graph_log_error("some nodes are not executed, details:");
         for (const auto& pair : m_nodes) {
@@ -770,6 +782,9 @@ void Graph::dump_node_status(bool force_dump) {
             } else if (node->status() == Node::Status::RUNNING) {
                 may_duration = m_timer.get_msecs() - node->start_time();
             } else if (node->status() == Node::Status::WAITING) {
+                may_duration = 0;
+                may_start_time = 0;
+            } else if (node->status() == Node::Status::TERMINATED) {
                 may_duration = 0;
                 may_start_time = 0;
             } else {

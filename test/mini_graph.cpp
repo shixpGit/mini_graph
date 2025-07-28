@@ -1019,7 +1019,7 @@ TEST(Graph, name_and_dot) {
 TEST(Graph, test_simple_graph_with_terminate) {
     Graph g2(4, "simple_graph");
     auto execute_graph2 = [&]() {
-        ASSERT_EQ(g2.name(), "test_graph");
+        ASSERT_EQ(g2.name(), "simple_graph");
 
         g2.add_task(
                 "A",
@@ -1114,6 +1114,5 @@ TEST(Graph, test_complicated_graph_with_terminate) {
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
-    ::testing::GTEST_FLAG(filter) = "Graph.test_complicated_graph_with_terminate";
     return RUN_ALL_TESTS();
 }
